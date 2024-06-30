@@ -1,16 +1,38 @@
-import {NextResponse} from 'next/server';
 import { lobbies } from '@/app/utils/lobbies-store';
+import { Player } from '@/app/utils/playerInterface';
 
 export async function POST(req: Request) {
-    const { lobbyId, playerName } = req.body;
+    try {
+        const { lobbyId, name } = await req.json();
 
-    if (lobbies.has(lobbyId)){
+        const newPlayer: Player = {
+            id: Math.random().toString(36).substring(2, 10),
+            name: name,
+            role: '',
+            isAlive: true,
+            isReady: false,
+            isHost: false,
+            isDisconnected: false
+        };
+
         const lobby = lobbies.get(lobbyId);
-        lobby?.players.push(playerName);
-        return NextResponse.json({
-            players: lobby?.players
+        if (lobby) {
+            lobby.players.push(newPlayer);
+
+            return new Response(JSON.stringify({ message: 'Player added successfully' }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } else {
+            return new Response(JSON.stringify({ error: 'Lobby not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+    } catch (error) {
+        return new Response(JSON.stringify({ error: 'Failed to join lobby' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
         });
-    } else {
-        return NextResponse.error();
     }
 }
